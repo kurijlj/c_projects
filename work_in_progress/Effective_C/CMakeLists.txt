@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15...3.20)
 project(
     effectivec
     VERSION 0.1
-    DESCRIPTION "Effective C test grounds for the code frm the book"
+    DESCRIPTION "Effective C test grounds for the code from the book"
     LANGUAGES C CXX
     )
 
