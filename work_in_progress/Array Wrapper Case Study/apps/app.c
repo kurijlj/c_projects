@@ -95,14 +95,28 @@ typedef struct chararray {
 
 } CharArray;
 
+typedef struct chararraylist {
+    const CharArray **list;
+    size_t len;
+
+} CharArrayList;
+
 
 /* ==========================================================================
  * Custom functions declarations
  * ========================================================================== */
 
-CharArray *NewCharArray(size_t len);
-void set_char_at(CharArray *a, size_t idx, char c);
-void free_char_array(CharArray *a);
+CharArray *NewCharArray(size_t);
+CharArray *ConstCharAsCharArray(const char *, const size_t);
+CharArray *CopyCharArray(const CharArray *);
+void set_char_at(CharArray *, const size_t, const char);
+void free_char_array(CharArray *);
+int equal_char_arrays(const CharArray *, const CharArray *);
+const char *char_array_as_cstr(const CharArray *);
+CharArrayList *NewCharArrayList(size_t);
+void set_char_array_at(CharArrayList *, const size_t, const CharArray *);
+CharArray *get_char_array_at(CharArrayList *, const size_t);
+void free_char_array_list(CharArrayList *);
 
 
 /* ==========================================================================
@@ -149,16 +163,68 @@ int main(int argc, const char **argv) {
     }
 
     if (argc == 0) {
+        /* Never ever forget to put const modifier before string literal */
+        const char msg1[] = "Convey this message further ...";
+        const char *msg2 = "Another message.";
+        /* msg[31] = '.';  Very bad of me */
         CharArray *a = NewCharArray(15);
+        CharArray *b = ConstCharAsCharArray("Hello World!", strlen("Hello World!"));
+        CharArray *c = ConstCharAsCharArray(msg1, strlen(msg1));
+        CharArray *d = ConstCharAsCharArray(msg2, strlen(msg2));
+        CharArray *e = ConstCharAsCharArray("by Ljubomir Kurij", strlen("by Ljubomir Kurij"));
+        CharArray *f = CopyCharArray(e);
+        CharArray *g = ConstCharAsCharArray("Zdravo ", strlen("Zdravo "));
+        CharArray *h = ConstCharAsCharArray("Svete!", strlen("Svete!"));
+        CharArrayList *l = NewCharArrayList(2);
+        size_t i = 0;
 
-        for(size_t i=0; i < 15; i++) {
+        /* Populate a */
+        while(a->len >= i) {
             set_char_at(a, i, 65 + i);
-
+            i++;
         }
 
-        fprintf(stdout, "%s: %s", kAppName, a->data);
+        /* Populate CharArray list */
+        set_char_array_at(l, 0, g);
+        set_char_array_at(l, 1, h);
+
+        fprintf(stdout, "%s: %s\n", kAppName, char_array_as_cstr(a));
+        fprintf(stdout, "%s: %s\n", kAppName, char_array_as_cstr(b));
+        fprintf(stdout, "%s: %s\n", kAppName, char_array_as_cstr(c));
+        fprintf(stdout, "%s: %s\n", kAppName, char_array_as_cstr(d));
+        fprintf(
+                stdout,
+                "%s: '%s' is equal to '%s': %s\n",
+                kAppName,
+                char_array_as_cstr(e),
+                char_array_as_cstr(a),
+                equal_char_arrays(e, a) ? "true" : "false"
+                );
+        fprintf(
+                stdout,
+                "%s: '%s' is equal to '%s': %s\n",
+                kAppName,
+                char_array_as_cstr(e),
+                char_array_as_cstr(f),
+                equal_char_arrays(e, f) ? "true" : "false"
+                );
+        fprintf(
+                stdout,
+                "%s: %s%s\n",
+                kAppName,
+                char_array_as_cstr(get_char_array_at(l, 0)),
+                char_array_as_cstr(get_char_array_at(l, 1))
+               );
 
         free_char_array(a);
+        free_char_array(b);
+        free_char_array(c);
+        free_char_array(d);
+        free_char_array(e);
+        free_char_array(f);
+        free_char_array_list(l);
+        g = NULL;
+        h = NULL;
 
     }
 
@@ -214,7 +280,7 @@ CharArray *NewCharArray(size_t len) {
     }
 
     a->len = len;
-    a->data = (char *) calloc(len + 2, sizeof(char));
+    a->data = (char *) calloc(a->len + 1, sizeof(char));
 
     /* Check if memory allocation succeeded */
     if(NULL == a->data){
@@ -222,14 +288,47 @@ CharArray *NewCharArray(size_t len) {
         return NULL;
     }
 
-    a->data[a->len + 0] = '\n';
-    a->data[a->len + 1] = '\0';
+    a->data[a->len] = '\0';
 
     return a;
 
 }
 
-void set_char_at(CharArray *a, size_t idx, char c) {
+CharArray *ConstCharAsCharArray(const char *str, const size_t n) {
+
+    /* Allocate memory for the array */
+    CharArray *a = NewCharArray(strlen(str) > n ? n : strlen(str));
+
+    /* Check if memory allocation succeeded */
+    if(NULL == a) {
+        return NULL;
+
+    }
+
+    strncpy(a->data, str, a->len);
+
+    return a;
+
+}
+
+CharArray *CopyCharArray(const CharArray *a) {
+
+    /* Allocate memory for the array */
+    CharArray *b = NewCharArray(a->len);
+
+    /* Check if memory allocation succeeded */
+    if(NULL == a) {
+        return NULL;
+
+    }
+
+    strncpy(b->data, a->data, a->len);
+
+    return b;
+
+}
+
+void set_char_at(CharArray *a, const size_t idx, const char c) {
     if(a->len > idx) {
         a->data[idx] = c;
 
@@ -239,7 +338,100 @@ void set_char_at(CharArray *a, size_t idx, char c) {
 
 void free_char_array(CharArray *a) {
 
-    free(a->data);
-    free(a);
+    if(NULL != a) {
+        free(a->data);
+        free(a);
+
+    }
+
+}
+
+int equal_char_arrays(const CharArray *a, const CharArray *b) {
+
+    if(a->len != b->len) {
+        return 0;
+
+    }
+
+    if(0 != strncmp(a->data, b->data, a->len)) {
+        return 0;
+
+    }
+
+    return 1;
+
+}
+
+const char *char_array_as_cstr(const CharArray *a) {
+    return (const char *) a->data;
+
+}
+
+CharArrayList *NewCharArrayList(size_t len) {
+
+    /* Allocate memory on the heap for the structure */
+    CharArrayList *l = (CharArrayList *) malloc(sizeof(CharArrayList));
+
+    /* Check if memory allocation succeeded */
+    if(NULL == l) {
+        return NULL;
+
+    }
+
+    l->len = len;
+    l->list = (CharArray **) calloc(l->len, sizeof(CharArray *));
+
+    /* Check if memory allocation succeeded */
+    if(NULL == l->list){
+        free(l);
+        return NULL;
+    }
+
+    size_t i = 0;
+
+    while(l->len > i) {
+        l->list[i] = NULL;
+
+        i++;
+
+    }
+
+    return l;
+
+}
+
+void set_char_array_at(CharArrayList *l, const size_t idx, const CharArray *a) {
+    if(l->len > idx) {
+        l->list[idx] = a;
+
+    }
+
+}
+
+CharArray *get_char_array_at(CharArrayList *l, const size_t idx) {
+    if(l->len > idx) {
+        return l->list[idx];
+
+    }
+
+    return NULL;
+
+}
+
+void free_char_array_list(CharArrayList *l) {
+
+    if(NULL != l) {
+        size_t i = 0;
+
+        while(l->len > i) {
+            free_char_array(l->list[i]);
+            l->list[i] = NULL;
+            i++;
+
+        }
+        free(l->list);
+        free(l);
+
+    }
 
 }

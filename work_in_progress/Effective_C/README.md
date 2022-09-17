@@ -7,7 +7,12 @@ Build as regular CMake project:
 1. Create build directory and `cd` into it. Than create directory structure and
 makefiles using:
 ```
-$ cmake -DCMAKE_C_COMPILER=clang-c -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS:BOOL=FALSE -DBUILD_TESTING:BOOL=FALSE -S ../.. -B .
+$ cmake -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS:BOOL=FALSE -DBUILD_TESTING:BOOL=FALSE -S ../.. -B .
+$ cmake --build . --config Debug
+```
+or
+```
+$ cmake -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS:BOOL=FALSE -DBUILD_TESTING:BOOL=FALSE -S ../.. -B .
 $ make
 ```
 
@@ -15,7 +20,12 @@ for \*NIX platforms,
 
 2. or using:
 ```
-$ cmake -DOpenCV_PATH="path_to_opencv" -DCMAKE_C_COMPILER=clang-c -DBUILD_SHARED_LIBS:BOOL=FALSE -DBUILD_TESTING:BOOL=FALSE -S ../.. -B .
+$ cmake -DOpenCV_PATH="path_to_opencv" -DCMAKE_C_COMPILER=clang -DBUILD_SHARED_LIBS:BOOL=FALSE -DBUILD_TESTING:BOOL=FALSE -S ../.. -B .
+$ cmake --build . --config Debug
+```
+or
+```
+$ cmake -DOpenCV_PATH="path_to_opencv" -DCMAKE_C_COMPILER=clang -DBUILD_SHARED_LIBS:BOOL=FALSE -DBUILD_TESTING:BOOL=FALSE -S ../.. -B .
 $ msbuild.exe myproject.sln
 ```
 
