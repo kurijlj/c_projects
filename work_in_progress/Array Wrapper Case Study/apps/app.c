@@ -81,21 +81,49 @@ static const char *const kUsages[] = {
  * Utility function declarations
  * ========================================================================== */
 
-void short_usage(struct argparse *self, const struct argparse_option *option);
-void version_info(struct argparse *self, const struct argparse_option *option);
+void short_usage(
+        struct argparse *self,
+        const struct argparse_option *option
+        );
+void version_info(
+        struct argparse *self,
+        const struct argparse_option *option
+        );
 
 
 /* ==========================================================================
  * Custom data types declarations
  * ========================================================================== */
 
-typedef struct chararray {
+/*
+   @brief Represents a character array structure.
+
+   The CharArray structure is used to store a dynamically allocated character
+   array along with its length. It provides a convenient way to manipulate and
+   access character data in C.
+
+   @var data - Pointer to the character array.
+   @var len  - Length of the character array.
+
+ */
+typedef struct CharArray {
     char *data;
     size_t len;
 
 } CharArray;
 
-typedef struct chararraylist {
+/*
+   @brief Represents a list of CharArray structures.
+
+   The CharArrayList structure is used to store an array of CharArray pointers
+   along with the number of elements in the list. It provides a convenient way
+   to manage a collection of CharArray objects in C.
+
+   @var list - Pointer to an array of const CharArray pointers.
+   @var len  - Number of elements in the list.
+
+*/
+typedef struct CharArrayList {
     const CharArray **list;
     size_t len;
 

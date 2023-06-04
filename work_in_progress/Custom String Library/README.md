@@ -1,9 +1,9 @@
-# Array Wrapper Case Study
-Investigate implementation of structures and algorithms for maniupalting data array.
+# Custom String Library
+Investigate the implementation of a string data type as a variable-aggregate abstract data type.
 
 ## Compiling Instructions
-Build as regular CMake project:
-1. Create build directory and `cd` into it. Than create directory structure and
+Build as a regular CMake project:
+1. Create a build directory and `cd` into it. Then create a directory structure and
 makefiles using:
 ```
 $ cmake -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS:BOOL=FALSE -DBUILD_TESTING:BOOL=FALSE -S ../.. -B .
@@ -28,9 +28,9 @@ $ cmake -DCMAKE_C_COMPILER=clang -DBUILD_SHARED_LIBS:BOOL=FALSE -DBUILD_TESTING:
 $ msbuild.exe myproject.sln
 ```
 
-for Win64 platform.
+for the Win64 platform.
 
-Build paramters can take following values:
+Build parameters can take the following values:
 ```
 -DCMAKE_CXX_COMPILER=(clang-c/cl/gcc/...)
 -DCMAKE_BUILD_TYPE=(Debug/RelWithDebInfo/Release/MinSizeRel)
