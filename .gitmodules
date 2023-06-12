@@ -1,0 +1,3 @@
+[submodule ".\\completed\\GSL Framework\\extern\\gsl"]
+	path = .\\completed\\GSL Framework\\extern\\gsl
+	url = https://github.com/ampl/gsl.git
