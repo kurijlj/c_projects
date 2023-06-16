@@ -44,6 +44,10 @@
 
 
 /* ==========================================================================
+ * Define section
+ * ========================================================================== */
+
+/* ==========================================================================
  * Headers include section
  * ========================================================================== */
 
@@ -65,6 +69,8 @@
 #include <strsafe.h>
 #include <windows.h>
 #else
+#include <dirent.h>
+#include <errno.h>
 #include <sys/stat.h>
 #endif
 
@@ -109,7 +115,7 @@ int main(int argc, const char **argv) {
 
     int usage = 0;
     int version = 0;
-    const char *path = NULL;
+    char * const path = NULL;
 
     struct argparse_option options[] = {
         OPT_GROUP("general options"),
@@ -167,37 +173,50 @@ int main(int argc, const char **argv) {
                     /* Check if path is a directory */
                     printf("%s: Path is a directory.\n", kAppName);
 
-                    /* Check if path is an empty directory */
+                    /* Given path is a directory. Let's check if it is empty */
                     WIN32_FIND_DATAA findData;
                     HANDLE hFind;
                     bool is_empty = true;
 
-                    /* Given path is a directory. Let's check if it is empty */
-                    hFind = FindFirstFileA(path, &findData);
+                    /* Create a search pattern */
+                    char search_pattern[FILENAME_MAX];
+                    snprintf(search_pattern, FILENAME_MAX, "%s\\*.*", path);
+
+                    /* Search for the first file in the directory */
+                    hFind = FindFirstFileA(search_pattern, &findData);
                     if (INVALID_HANDLE_VALUE == hFind) {
                         /* We have an error. Print the error message and exit */
-                        ReportWin32SystemError(kAppName, "FindFirstFileA");
+                        ReportWin32SystemError(TEXT(kAppName),
+                                TEXT("FindFirstFileA"));
+
                         exit(EXIT_FAILURE);
 
                     }
 
                     do {
                         /* Ignore "." and ".." directories */
-                        printf("%s: %s\n", kAppName, findData.cFileName);
-                        if (strcmp(findData.cFileName, ".") != 0
-                                && strcmp(findData.cFileName, "..") != 0) {
+                        strncmp(findData.cFileName, ".", 1);
+                        if (strncmp(findData.cFileName, ".",
+                                    FILENAME_MAX) != 0
+                                && strncmp(findData.cFileName, "..",
+                                    FILENAME_MAX) != 0) {
                             /* Directory is not empty */
                             is_empty = false;
-                            /*
                             FindClose(hFind);
+
+                            /* We found some content in the directory.
+                               Exit the loop
+                             */
                             break;
-                            */
 
                         }
 
                     } while (FindNextFileA(hFind, &findData) != 0);
+
+                    /* Close find handle */
                     FindClose(hFind);
 
+                    /* Print message for the user */
                     if (is_empty) {
                         printf("%s: Directory is empty.\n", kAppName);
 
@@ -211,6 +230,44 @@ int main(int argc, const char **argv) {
                     /* Check if path is a file */
                     printf("%s: Path is a file.\n", kAppName);
 
+                    /* Given path is a file. Let's check if it is empty */
+                    HANDLE hFile;
+                    bool is_empty = true;
+
+                    /* Open the file */
+                    hFile = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ,
+                            NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                    if (INVALID_HANDLE_VALUE == hFile) {
+                        /* We have an error. Print the error message and exit */
+                        ReportWin32SystemError(TEXT(kAppName),
+                                TEXT("CreateFileA"));
+
+                        exit(EXIT_FAILURE);
+
+                    }
+
+                    /* Get the file size */
+                    DWORD fileSize = GetFileSize(hFile, NULL);
+
+                    /* Check if file size is zero */
+                    if (0 != fileSize) {
+                        /* File is not empty */
+                        is_empty = false;
+
+                    }
+
+                    /* Close file handle */
+                    CloseHandle(hFile);
+
+                    /* Print message for the user */
+                    if (is_empty) {
+                        printf("%s: File is empty.\n", kAppName);
+
+                    } else {
+                        printf("%s: File is not empty.\n", kAppName);
+
+                    }
+
                 }
 
                 #else
@@ -223,6 +280,57 @@ int main(int argc, const char **argv) {
                 } else if(S_ISDIR(st.st_mode)) {
                     /* Check if path is a directory */
                     printf("%s: Path is a directory.\n", kAppName);
+
+                    /* Given path is a directory. Let's check if it is empty */
+                    DIR *directory;
+                    struct dirent *entry;
+                    bool is_empty = true;
+
+                    /* Resete the error status value */
+                    errno = 0;
+
+                    /* Open the directory */
+                    directory = opendir(path);
+                    if (directory == NULL) {
+                        /* We have an error. Print the error message and exit */
+                        if(errno != 0) {
+                            perror("opendir");
+                        } else {
+                            printf("%s: opendir() failed for unknown reason.\n",
+                                    kAppName);
+                        }
+
+                        exit(EXIT_FAILURE);
+
+                    }
+
+                    /* Read directory entries */
+                    while ((entry = readdir(directory)) != NULL) {
+                        /* Ignore "." and ".." entries */
+                        if (strncmp(entry->d_name, ".", FILENAME_MAX) != 0
+                                && strncmp(entry->d_name, "..",
+                                    FILENAME_MAX) != 0) {
+                            /* Directory is not empty */
+                            is_empty = false;
+                            closedir(directory);
+
+                            /* We found some content in the directory.
+                               Exit the loop
+                             */
+                            break;
+
+                        }
+
+                    }
+                    closedir(directory);
+
+                    if (is_empty) {
+                        printf("%s: Directory is empty.\n", kAppName);
+
+                    } else {
+                        printf("%s: Directory is not empty.\n", kAppName);
+
+                    }
 
                 } else if(S_ISREG(st.st_mode)) {
                     /* Check if path is a file */
@@ -291,7 +399,7 @@ void ReportWin32SystemError(LPSTR lpszAppName, LPTSTR lpszFunction)
 
     /* Display the error message and exit the process */
     fprintf(stderr, "%s: module '%s' failed with error %d: %s\n", lpszAppName,
-            lpszFunction, dw, lpMsgBuf);
+            lpszFunction, dw, (LPTSTR) &lpMsgBuf);
 
     /* Free error buffer */
     LocalFree(lpMsgBuf);
