@@ -1,0 +1,3 @@
+add_executable(system_path_validator main.c)
+target_compile_features(system_path_validator PRIVATE c_std_11)
+target_link_libraries (system_path_validator LINK_PUBLIC argparse)
