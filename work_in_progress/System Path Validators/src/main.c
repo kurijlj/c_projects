@@ -336,6 +336,46 @@ int main(int argc, const char **argv) {
                     /* Check if path is a file */
                     printf("%s: Path is a file.\n", kAppName);
 
+                    /* Given path is a file. Let's check if it is empty */
+                    FILE *file;
+                    bool is_empty = true;
+
+                    /* Resete the error status value */
+                    errno = 0;
+
+                    /* Open the file in read mode */
+                    file = fopen(path, "r");
+                    if (file == NULL) {
+                        /* We have an error. Print the error message and exit */
+                        if(errno != 0) {
+                            perror("fopen");
+                        } else {
+                            printf("%s: fopen() failed for unknown reason.\n",
+                                    kAppName);
+                        }
+
+                        exit(EXIT_FAILURE);
+
+                    }
+
+                    /* Check if file is empty */
+                    fseek(file, 0, SEEK_END);
+                    long fileSize = ftell(file);
+                    if (fileSize != 0) {
+                        /* File is not empty */
+                        is_empty = false;
+
+                    }
+                    fclose(file);
+
+                    if (is_empty) {
+                        printf("%s: File is empty.\n", kAppName);
+
+                    } else {
+                        printf("%s: File is not empty.\n", kAppName);
+
+                    }
+
                 }
                 #endif
 
