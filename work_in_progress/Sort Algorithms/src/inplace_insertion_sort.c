@@ -164,25 +164,76 @@ int main (int argc, const char **argv) {
 
                 }
 
-                fputc ('\n', stderr);
-
-                GSL_ERROR_VAL ("unknown generator", GSL_EINVAL, 0);
-
                 exit (EXIT_FAILURE);
 
             }
-
-            fprintf (stderr, "GSL_RNG_TYPE=%s\n", gsl_rng_default->name);
 
         } else {
             T = gsl_rng_mt19937;
 
         }
 
-    printf ("%s Main module running ...\n", kAppName);
-    printf ("%s: Generator: %s\n", kAppName, T->name);
-    printf ("%s: Seed: %d\n", kAppName, seed);
-    printf ("%s: Number of random numbers: %d\n", kAppName, number);
+        /* We have an valid geneator name so create a generator chosen by
+           the user, or use default one */
+        gsl_rng *r = gsl_rng_alloc (T);
+        gsl_rng_set (r, seed);
+
+        /* Initialize the array of random numbers */
+        unsigned long int *array = malloc (number * sizeof (unsigned long int));
+        for (size_t i = 0; i < number; i++) {
+            *(array + i) = gsl_rng_get (r);
+
+        }
+    
+        printf ("%s Main module running ...\n", kAppName);
+        printf ("%s: Generator: %s\n", kAppName, T->name);
+        printf ("%s: Seed: %d\n", kAppName, seed);
+        printf ("%s: Array size: %d\n", kAppName, number);
+        printf ("%s: Unsorted:\n", kAppName);
+        for (size_t i = 0; i < number; i++) {
+            printf ("%lu", *(array + i));
+            if(i < number - 1) {
+                printf (",");
+
+            }
+
+        }
+        printf ("\n");
+
+        /* We have an array of random numbers so sort it using in-place
+           insertion sort algorithm */
+        for (size_t i = 1; i < number; i++) {
+            unsigned long int key = *(array + i);
+            size_t j = i;
+
+            /* We run j from i down to 1 to prevent wraparound of the unsigned
+               data type (size_t). But we acces array items from i - 1 to 0. */
+            while (j > 0 && *(array + j - 1) > key) {
+                *(array + j) = *(array + j - 1);
+
+                j--;
+
+            }
+
+            *(array + j) = key;
+
+        }
+
+        printf ("%s: Sorted:\n", kAppName);
+        for (size_t i = 0; i < number; i++) {
+            printf ("%lu", array[i]);
+            if(i < number - 1) {
+                printf (",");
+
+            }
+
+        }
+        printf ("\n");
+        printf ("%s: End of execution\n", kAppName);
+
+
+        free (array);
+        gsl_rng_free (r);
 
     }
 
