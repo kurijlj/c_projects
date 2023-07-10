@@ -63,9 +63,9 @@
  * Global variables section
  * ========================================================================== */
 
-static const char *const kAppName = "inplace_insertion_sort";
+static const char *const kAppName = "linked_list";
 static const char *const kDescription = "\n"
-    "Implementation of in-place insertion sort algorithm.\n\n"
+    "Implementation of linked list data structure.\n\n"
     "Mandatory arguments to long options are mandatory for short options too.";
 static const char *const kEpilogue = "\nReport bugs to <author@email.com>.";
 static const char *const kUsages[] = {
@@ -131,7 +131,8 @@ size_t       list_size (const list_t * const list);
 list_node_t *list_find (const list_t * const list, const void * const data);
 void         list_node_print (const list_node_t * const node,
         const list_data_type_t type);
-void         list_print (const list_t *list, const list_data_type_t data_type);
+void         list_print (const list_t * const list,
+        const list_data_type_t data_type);
 
 
 /* ==========================================================================
@@ -331,7 +332,7 @@ void *list_pop_front (list_t * const list) {
     node->next = NULL;
 
     /* Debug output */
-    printf("%s: list_push_front: ", kAppName);
+    printf("%s: list_pop_front: ", kAppName);
     list_node_print(node, int_type);
 
     free(node);
@@ -364,7 +365,7 @@ int list_push_back (list_t * const list, void * const data) {
     list_node_init(node, data);
 
     /* Debug output */
-    printf("%s: list_push_front: ", kAppName);
+    printf("%s: list_push_back: ", kAppName);
     list_node_print(node, int_type);
 
     /* Add the node to the back of the list */
@@ -408,7 +409,7 @@ void *list_pop_back (list_t * const list) {
     node->next = NULL;
 
     /* Debug output */
-    printf("%s: list_push_front: ", kAppName);
+    printf("%s: list_pop_front: ", kAppName);
     list_node_print(list->tail, int_type);
 
     free(list->tail);
