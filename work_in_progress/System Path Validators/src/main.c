@@ -74,7 +74,6 @@
 #include <sys/stat.h>
 #endif
 
-/* Find a missing semi-colon in the following code */
 /* ==========================================================================
  * Global variables section
  * ========================================================================== */
@@ -159,11 +158,10 @@ int main(int argc, const char **argv) {
                 printf("%s: Path is empty.\n", kAppName);
 
             } else {
-
-                DWORD dwAttrib = GetFileAttributes(path);
-
                 #ifdef _WIN32
                 /* Execute Windows specific code */
+                DWORD dwAttrib = GetFileAttributes(path);
+
                 if (INVALID_FILE_ATTRIBUTES == dwAttrib
                         && GetLastError() == ERROR_FILE_NOT_FOUND) {
                     /* Check if path exists */
