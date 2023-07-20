@@ -27,6 +27,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
 endif()
 
-# The executable code is here
+# External dependencies
 add_subdirectory(extern/argparse)
+
+# The executable code is here
 add_subdirectory(src)

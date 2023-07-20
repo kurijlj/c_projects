@@ -133,11 +133,11 @@ void printBits(unsigned char c) {
  * ========================================================================== */
 
 /* --------------------------------------------------------------------------
- * Function: ps_flags_t validate_path(const char * const path)
+ * Function: ps_flags_t check_path_status(const char * const path)
  * --------------------------------------------------------------------------
  *
  * Description:
- *     Validate user supplied system path.
+ *     Check status of a user supplied system path.
  *
  * Parameters:
  *      path: user supplied system path.
@@ -147,13 +147,13 @@ void printBits(unsigned char c) {
  *
  * Example:
  *      ps_flags_t path_status
- *          = validate_path("C:\\Windows\\System32\\drivers");
+ *          = chceck_path_status("C:\\Windows\\System32\\drivers");
  *
  * Output:
  *      path_status = 00000000
  *
  * ----------------------------------------------------------------------- -- */
-ps_flags_t validate_path(const char * const path) {
+ps_flags_t check_path_status(const char * const path) {
     /* Initialize path status flags */
     ps_flags_t path_status = 0;
 
@@ -163,9 +163,9 @@ ps_flags_t validate_path(const char * const path) {
 
     } else {
         /* Check if path exists */
-        #ifndef _WIN32
+        #ifdef _WIN32
         /* Windows specific code */
-        DWORD dwAttrib = GetFileAttributes(path);
+        DWORD dwAttrib = GetFileAttributesA(path);
 
         if (INVALID_FILE_ATTRIBUTES != dwAttrib) {
             path_status = path_set_exist(path_status, 1);
@@ -183,74 +183,58 @@ ps_flags_t validate_path(const char * const path) {
                 char szSrchPat[FILENAME_MAX];
                 snprintf(szSrchPat, FILENAME_MAX, "%s\\*.*", path);
 
+                /* By deafault set that directory is an empty one */
+                path_status = path_set_dir_empty(path_status, 1);
+
                 /* Find the first file in the directory */
                 hFind = FindFirstFileA(szSrchPat, &ffd);
-                if (INVALID_HANDLE_VALUE == hFind) {
-                    /* We an error that we don't handle. Print the error message
-                     * and bail out.
-                     */
-                    ReportWin32SysError(TEXT(kAppNAme), TEXT("FindFirstFileA"));
+                if (INVALID_HANDLE_VALUE != hFind) {
+                    /* Loop over all the files in the directory */
+                    do {
+                        /* Skip the current and parent directory */
+                        if (strcmp(ffd.cFileName, ".") == 0
+                            || strcmp(ffd.cFileName, "..") == 0) {
+                            continue;
+                        }
 
-                    exit(EXIT_FAILURE);
+                        /* Directory is not empty */
+                        path_status = path_set_dir_empty(path_status, 0);
 
-                }
+                        /* Stop searching */
+                        break;
 
-                /* Loop over all the files in the directory */
-                do {
-                    /* Skip the current and parent directory */
-                    if (strcmp(ffd.cFileName, ".") == 0
-                        || strcmp(ffd.cFileName, "..") == 0) {
-                        continue;
-                    }
+                    } while (FindNextFileA(hFind, &ffd) != 0);
 
-                    /* Directory is not empty */
-                    path_status = path_set_dir_empty(path_status, 0);
-
-                    /* Stop searching */
-                    break;
-
-                } while (FindNextFileA(hFind, &ffd) != 0);
+                }  /* End of valid handle value branch */
 
                 /* Close the search handle */
                 FindClose(hFind);
 
-            /* Check if path is a file */
             } else {
                 /* Path is a file */
                 path_status = path_set_file(path_status, 1);
 
                 /* Check if file is empty */
-                HANDLE hFile = CreateFile(path, GENERIC_READ, 0, NULL,
-                    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                HANDLE hFile = CreateFile(path, GENERIC_READ, FILE_SHARE_READ,
+                        NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
-                if (hFile != INVALID_HANDLE_VALUE) {
-                    /* File exists */
-                    path_status = path_set_file_empty(path_status, 1);
+                if (INVALID_HANDLE_VALUE != hFile) {
+                    /* We can read file */
 
                     /* Get file size */
                     LARGE_INTEGER liFileSize;
 
-                    if (GetFileSizeEx(hFile, &liFileSize)) {
-                        if (liFileSize.QuadPart == 0) {
-                            /* File is empty */
-                            path_status = path_set_file_empty(path_status, 1);
+                    if (GetFileSizeEx(hFile, &liFileSize)
+                            && 0 == liFileSize.QuadPart) {
+                        /* File is empty */
+                        path_status = path_set_file_empty(path_status, 1);
 
-                        } else {
-                            /* File is not empty */
-                            path_status = path_set_file_empty(path_status, 0);
-                        }
-
-                    } else {
-                        /* Could not get file size */
-                        path_status = path_set_file_empty(path_status, 0);
                     }
 
                     CloseHandle(hFile);
 
-                } else {
-                    /* File does not exist */
-                    path_status = path_set_file_empty(path_status, 1);
                 }
+
             }
 
         } /* End of path exists branch */
@@ -259,12 +243,82 @@ ps_flags_t validate_path(const char * const path) {
 
         #else
         /* POSIX specific code */
+        struct stat st;
+
+        /* Check if path exists */
+        if(0 == stat(path, &st)) {
+            /* Path exists */
+            path_status = path_set_exist(path_status, 1);
+
+            /* Check if path is a directory */
+            if (S_ISDIR(st.st_mode)) {
+                /* Path is a directory */
+                path_status = path_set_dir(path_status, 1);
+
+                /* By deafault set that directory is an empty one */
+                path_status = path_set_dir_empty(path_status, 1);
+
+                /* Check if directory is empty */
+                DIR *dir = opendir(path);
+
+                if (NULL != dir) {
+                    /* Loop over all the files in the directory */
+                    struct dirent *entry;
+                    while (NULL != (entry = readdir(dir))) {
+                        /* Skip the current and parent directory */
+                        if (strcmp(entry->d_name, ".") == 0
+                            || strcmp(entry->d_name, "..") == 0) {
+                            continue;
+                        }
+
+                        /* Directory is not empty */
+                        path_status = path_set_dir_empty(path_status, 0);
+
+                        /* Stop searching */
+                        break;
+
+                    }
+
+                    /* Close the directory */
+                    closedir(dir);
+
+                }  /* End of valid handle value branch */
+
+            } else if(S_ISREG(st.st_mode)) {
+                /* Path is a file */
+                path_status = path_set_file(path_status, 1);
+
+                /* Check if file is empty */
+                FILE *file = fopen(path, "rb");
+
+                if (NULL != file) {
+                    /* We can read file */
+
+                    /* Get file size */
+                    fseek(file, 0, SEEK_END);
+                    long file_size = ftell(file);
+                    rewind(file);
+
+                    if (0 == file_size) {
+                        /* File is empty */
+                        path_status = path_set_file_empty(path_status, 1);
+
+                    }
+
+                    fclose(file);
+
+                }
+
+            }  /* End of path is a file branch */
+
+        } /* End of path exists branch */
+
         #endif  /* End of _WIN32 */
 
     }  /* End of path != '\0' branch */
 
     return path_status;
 
-
+}
 
 #endif  /* SPVALID_H */
