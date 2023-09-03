@@ -45,6 +45,7 @@
  * ========================================================================== */
 
 /* Related header */
+#include "focus_precision_app.h"
 
 /* System headers */
 
@@ -74,9 +75,9 @@
 #define APP_LICENSE_URL      "http://gnu.org/licenses/gpl.html"
 #define APP_DESCRIPTION      "Focus Precision Measurement Log Viewer"
 #ifdef _WIN32
-#define APP_USAGE_A          "app_name.exe [OPTION]..."
+#define APP_USAGE_A          APP_NAME ".exe [OPTION]..."
 #else
-#define APP_USAGE_A          "app_name [OPTION]..."
+#define APP_USAGE_A          APP_NAME " [OPTION]..."
 #endif  /* End of platform specific macro definition */
 #define APP_EPILOGUE         "\nReport bugs to <" APP_EMAIL ">."
 
@@ -103,37 +104,6 @@ int version_info(
         struct argparse *self,
         const struct argparse_option *option
         );
-
-
-/* ==========================================================================
- * GTK 4 connect activate signal to a callback function
- * ========================================================================== */
-
-static void activate (GtkApplication *app, gpointer user_data) {
-    GtkWidget *window;
-    GtkWidget *button;
-    GtkWidget *box;
-
-    window = gtk_application_window_new (app);
-    gtk_window_set_title (GTK_WINDOW (window), "Focus Precision Analyze");
-    gtk_window_set_default_size (GTK_WINDOW (window), 200, 200);
-
-    box = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_halign (box, GTK_ALIGN_CENTER);
-    gtk_widget_set_valign (box, GTK_ALIGN_CENTER);
-
-    gtk_window_set_child (GTK_WINDOW (window), box);
-
-    button = gtk_button_new_with_label ("Hello \"Focus\"!");
-
-    g_signal_connect_swapped (button, "clicked",
-            G_CALLBACK (gtk_window_destroy), window);
-
-    gtk_box_append (GTK_BOX (box), button);
-
-    gtk_widget_show (window);
-
-}
 
 
 /* ==========================================================================
@@ -189,12 +159,8 @@ int main(int argc, char **argv) {
         /* No arguments were given */
 
         /* Let's build a simple GTK v4 application */
-        GtkApplication *app;
-
-        app = gtk_application_new (APP_IDENTIFIER, G_APPLICATION_FLAGS_NONE);
-        g_signal_connect (app, "activate", G_CALLBACK (activate), NULL);
-        status = g_application_run (G_APPLICATION (app), argc, argv);
-        g_object_unref (app);
+        status = g_application_run (G_APPLICATION
+                (focus_precision_app_new(APP_IDENTIFIER)), argc, argv);
 
     }
 

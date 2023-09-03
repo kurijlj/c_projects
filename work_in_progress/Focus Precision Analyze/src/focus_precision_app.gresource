@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/c_projects/focus_precision_app">
+    <file preprocess="xml-stripblanks">main_app_window.ui</file>
+  </gresource>
+</gresources>
